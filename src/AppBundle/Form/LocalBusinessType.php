@@ -2,6 +2,7 @@
 
 namespace AppBundle\Form;
 
+use AppBundle\Service\SettingsManager;
 use libphonenumber\PhoneNumberFormat;
 use Misd\PhoneNumberBundle\Form\Type\PhoneNumberType;
 use Symfony\Component\Form\AbstractType;
@@ -22,17 +23,20 @@ abstract class LocalBusinessType extends AbstractType
 {
     protected $authorizationChecker;
     protected $tokenStorage;
+    protected $settingsManager;
     protected $country;
     protected $loopeatEnabled;
 
     public function __construct(
         AuthorizationCheckerInterface $authorizationChecker,
         TokenStorageInterface $tokenStorage,
+        SettingsManager $settingsManager,
         string $country,
         bool $loopeatEnabled = false)
     {
         $this->authorizationChecker = $authorizationChecker;
         $this->tokenStorage = $tokenStorage;
+        $this->settingsManager = $settingsManager;
         $this->country = $country;
         $this->loopeatEnabled = $loopeatEnabled;
     }

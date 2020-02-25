@@ -95,6 +95,9 @@
       {% if form.createOrders is defined %}
         {{ form_row(form.createOrders) }}
       {% endif %}
+      {% if form.smsEnabled is defined %}
+        {{ form_row(form.smsEnabled) }}
+      {% endif %}
     {% endif %}
     <hr>
   {% endif %}

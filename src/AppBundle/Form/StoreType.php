@@ -56,12 +56,20 @@ class StoreType extends LocalBusinessType
                     'label' => 'form.store_type.create_orders.label',
                     'required' => false,
                 ])
+
                 ->add('timeSlot', EntityType::class, [
                     'label' => 'form.store_type.time_slot.label',
                     'class' => TimeSlot::class,
                     'choice_label' => 'name',
                     'required' => false,
                 ]);
+
+            if ($this->settingsManager->get('sms_enabled')) {
+                $builder->add('smsEnabled', CheckboxType::class, [
+                    'label' => 'form.store_type.sms_enabled.label',
+                    'required' => false,
+                ]);
+            }
         }
 
         $builder->addEventListener(FormEvents::POST_SET_DATA, function (FormEvent $event) {

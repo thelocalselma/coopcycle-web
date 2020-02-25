@@ -403,4 +403,9 @@ class Store extends LocalBusiness
     {
         return $this->smsEnabled;
     }
+
+    public function setSmsEnabled($smsEnabled)
+    {
+        $this->smsEnabled = $smsEnabled;
+    }
 }
