@@ -134,6 +134,8 @@ class Store extends LocalBusiness
 
     private $checkExpression;
 
+    private $smsEnabled = false;
+
     public function __construct() {
         $this->deliveries = new ArrayCollection();
         $this->owners = new ArrayCollection();
@@ -395,5 +397,10 @@ class Store extends LocalBusiness
     public function getCheckExpression()
     {
         return $this->checkExpression;
+    }
+
+    public function isSmsEnabled()
+    {
+        return $this->smsEnabled;
     }
 }

@@ -99,6 +99,48 @@ class SendSmsTest extends TestCase
         call_user_func_array($this->sendSms, [ new TaskDone($delivery->getPickup(), 'Lorem ipsum') ]);
     }
 
+    public function testSendsSmsWithSmsDisabledOnStore()
+    {
+        $this->settingsManager->get('sms_enabled')->willReturn(true);
+
+        $phoneNumber = new PhoneNumber();
+
+        $this->phoneNumberUtil->format($phoneNumber, Argument::any())
+            ->willReturn('+33612345678');
+
+        $dropoffAddress = new Address();
+        $dropoffAddress->setTelephone($phoneNumber);
+
+        $store = $this->prophesize(Store::class);
+        $store->isSmsEnabled()->willReturn(false);
+
+        $delivery = $this->prophesize(Delivery::class);
+
+        $delivery->getStore()->willReturn($store->reveal());
+        $delivery->getOrder()->willReturn(null);
+        $delivery->getId()->willReturn(1);
+
+        $pickup = new Task();
+        $pickup->setType(Task::TYPE_PICKUP);
+
+        $dropoff = new Task();
+        $dropoff->setType(Task::TYPE_DROPOFF);
+        $dropoff->setAddress($dropoffAddress);
+
+        $delivery->getPickup()->willReturn($pickup);
+        $delivery->getDropoff()->willReturn($dropoff);
+
+        $pickup->setDelivery($delivery->reveal());
+
+        $msg = new Sms('Hello', '+33612345678');
+
+        $this->messageBus
+            ->dispatch($msg)
+            ->shouldNotBeCalled();
+
+        call_user_func_array($this->sendSms, [ new TaskDone($delivery->reveal()->getPickup(), 'Lorem ipsum') ]);
+    }
+
     public function testSendsSmsToRecipient()
     {
         $this->settingsManager->get('sms_enabled')->willReturn(true);
@@ -111,8 +153,12 @@ class SendSmsTest extends TestCase
         $dropoffAddress = new Address();
         $dropoffAddress->setTelephone($phoneNumber);
 
+        $store = $this->prophesize(Store::class);
+        $store->isSmsEnabled()->willReturn(true);
+
         $delivery = $this->prophesize(Delivery::class);
 
+        $delivery->getStore()->willReturn($store->reveal());
         $delivery->getOrder()->willReturn(null);
         $delivery->getId()->willReturn(1);
 

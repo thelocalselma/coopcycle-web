@@ -61,6 +61,12 @@ class SendSms
             return;
         }
 
+        $store = $delivery->getStore();
+
+        if (null === $store || !$store->isSmsEnabled()) {
+            return;
+        }
+
         $dropoff = $delivery->getDropoff();
 
         $telephone = $dropoff->getAddress()->getTelephone();

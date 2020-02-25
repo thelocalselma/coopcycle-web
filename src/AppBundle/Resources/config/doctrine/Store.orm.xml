@@ -26,6 +26,7 @@
     <field name="prefillPickupAddress" type="boolean" column="prefill_pickup_address"/>
     <field name="createOrders" type="boolean" column="create_orders"/>
     <field name="checkExpression" type="string" column="check_expression" nullable="true"/>
+    <field name="smsEnabled" type="boolean" column="sms_enabled"/>
     <one-to-many field="deliveries" target-entity="AppBundle\Entity\Delivery" mapped-by="store">
       <cascade>
         <cascade-persist/>
