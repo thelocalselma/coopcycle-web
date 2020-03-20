@@ -837,3 +837,7 @@ form.order_export.date.label: Date
 form.order_export.messenger.label: Add column with messenger who completed the order
 basics.show: Show
 basics.hide: Hide
+sms.tracking: |
+  Hello,
+  Your delivery is on its way.
+  Track it on %link%

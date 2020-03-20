@@ -855,3 +855,7 @@ form.order_export.date.label: Date
 form.order_export.messenger.label: Inclure une colonne avec le coursier ayant livré la commande
 basics.show: Afficher
 basics.hide: Masquer
+sms.tracking: |
+  Bonjour,
+  Votre livraison est en cours.
+  Suivez l'avancement sur %link%
