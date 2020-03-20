@@ -123,3 +123,7 @@ services:
     tags:
       - { name: 'console.command', command: 'coopcycle:geofencing' }
       - { name: 'monolog.logger', channel: 'geofencing' }
+
+  AppBundle\Command\SmsCommand:
+    tags:
+      - { name: 'console.command', command: 'coopcycle:notifications:sms' }
