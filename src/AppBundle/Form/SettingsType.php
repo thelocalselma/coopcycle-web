@@ -24,6 +24,7 @@ use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\CollectionType;
 use Symfony\Component\Form\Extension\Core\Type\EmailType;
+use Symfony\Component\Form\Extension\Core\Type\HiddenType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\Extension\Core\Type\PasswordType;
 use Symfony\Component\OptionsResolver\OptionsResolver;
@@ -117,6 +118,21 @@ class SettingsType extends AbstractType
                 'attr' => [
                     'autocomplete' => 'new-password'
                 ]
+            ])
+            ->add('sms_enabled', CheckboxType::class, [
+                'required' => false,
+                'label' => 'form.settings.sms_enabled.label',
+            ])
+            ->add('sms_gateway', ChoiceType::class, [
+                'choices' => [
+                    'Mailjet' => 'mailjet'
+                ],
+                'required' => false,
+                'label' => 'form.settings.sms_gateway.label',
+            ])
+            ->add('sms_gateway_config', HiddenType::class, [
+                'required' => false,
+                'label' => 'form.settings.sms_gateway_config.label',
             ])
             ->add('google_api_key', TextType::class, [
                 'label' => 'form.settings.google_api_key.label',
