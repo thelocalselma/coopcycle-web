@@ -1,4 +1,5 @@
 {% extends "@App/base.html.twig" %}
+
 {% set restaurant_edit_route = is_granted('ROLE_ADMIN') ? 'admin_restaurant' : 'profile_restaurant' %}
 {% set restaurant_edit_url = path(restaurant_edit_route, { id: restaurant.id }) %}
 
@@ -23,6 +24,7 @@
 {% block body %}
 <div class="container">
 
+  {% block restaurant_nav %}
   <div class="homepage-restaurants__show-more text-left">
     {% if restaurant.context == 'AppBundle\\Enum\\Store' %}
       <a href="{{ path('stores') }}">← {% trans %}index.view_all_shops{% endtrans %}</a>
@@ -30,6 +32,7 @@
       <a href="{{ path('restaurants') }}">← {% trans %}index.view_all_restaurants{% endtrans %}</a>
     {% endif %}
   </div>
+  {% endblock %}
 
   {% if not restaurant.enabled %}
     <div class="row">

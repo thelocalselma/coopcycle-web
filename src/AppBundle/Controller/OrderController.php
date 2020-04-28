@@ -25,9 +25,6 @@ use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Translation\TranslatorInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
-/**
- * @Route("/order")
- */
 class OrderController extends AbstractController
 {
     private $objectManager;
@@ -57,8 +54,29 @@ class OrderController extends AbstractController
     }
 
     /**
-     * @Route("/", name="order")
-     * @Template()
+     * @Route("/embed/order", name="order_embed")
+     */
+    public function embedIndexAction(Request $request,
+        OrderManager $orderManager,
+        CartContextInterface $cartContext,
+        OrderProcessorInterface $orderProcessor,
+        TranslatorInterface $translator,
+        ValidatorInterface $validator)
+    {
+        $request->attributes->set('embed', true);
+
+        return $this->indexAction(
+            $request,
+            $orderManager,
+            $cartContext,
+            $orderProcessor,
+            $translator,
+            $validator
+        );
+    }
+
+    /**
+     * @Route("/order/", name="order")
      */
     public function indexAction(Request $request,
         OrderManager $orderManager,
@@ -143,17 +161,36 @@ class OrderController extends AbstractController
             $isLoopEatValid = count($violations) === 0;
         }
 
-        return array(
+        $embed = $request->attributes->get('embed', false);
+
+        return $this->render($embed ? '@App/order/embed.html.twig' : '@App/order/index.html.twig', [
             'order' => $order,
             'shipping_range' => $this->getShippingRange($order),
             'form' => $form->createView(),
             'loopeat_valid' => $isLoopEatValid,
+        ]);
+    }
+
+    /**
+     * @Route("/embed/order/payment", name="order_payment_embed")
+     */
+    public function embedPaymentAction(Request $request,
+        OrderManager $orderManager,
+        CartContextInterface $cartContext,
+        StripeManager $stripeManager)
+    {
+        $request->attributes->set('embed', true);
+
+        return $this->paymentAction(
+            $request,
+            $orderManager,
+            $cartContext,
+            $stripeManager
         );
     }
 
     /**
-     * @Route("/payment", name="order_payment")
-     * @Template()
+     * @Route("/order/payment", name="order_payment")
      */
     public function paymentAction(Request $request,
         OrderManager $orderManager,
@@ -181,6 +218,9 @@ class OrderController extends AbstractController
             'shipping_range' => $this->getShippingRange($order),
         ];
 
+        $embed = $request->attributes->get('embed', false);
+        $view  = $embed ? '@App/order/embed_payment.html.twig' : '@App/order/payment.html.twig';
+
         $form->handleRequest($request);
         if ($form->isSubmitted() && $form->isValid()) {
 
@@ -203,10 +243,11 @@ class OrderController extends AbstractController
             $this->objectManager->flush();
 
             if (PaymentInterface::STATE_FAILED === $payment->getState()) {
-                return array_merge($parameters, [
+
+                return $this->render($view, array_merge($parameters, [
                     'form' => $form->createView(),
                     'error' => $payment->getLastError()
-                ]);
+                ]));
             }
 
             $this->addFlash('track_goal', true);
@@ -219,6 +260,6 @@ class OrderController extends AbstractController
 
         $parameters['form'] = $form->createView();
 
-        return $parameters;
+        return $this->render($view, $parameters);
     }
 }

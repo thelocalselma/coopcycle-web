@@ -197,6 +197,37 @@ class RestaurantController extends AbstractController
     }
 
     /**
+     * @Route("/embed/{type}/{id}-{slug}", name="restaurant_embed",
+     *   requirements={
+     *     "type"="(restaurant|store)",
+     *     "id"="(\d+|__RESTAURANT_ID__)",
+     *     "slug"="([a-z0-9-]+)"
+     *   },
+     *   defaults={
+     *     "slug"="",
+     *     "type"="restaurant"
+     *   }
+     * )
+     */
+    public function embedIndexAction($type, $id, $slug, Request $request,
+        SlugifyInterface $slugify,
+        CartContextInterface $cartContext,
+        IriConverterInterface $iriConverter)
+    {
+        $request->attributes->set('embed', true);
+
+        return $this->indexAction(
+            $type,
+            $id,
+            $slug,
+            $request,
+            $slugify,
+            $cartContext,
+            $iriConverter
+        );
+    }
+
+    /**
      * @Route("/{type}/{id}-{slug}", name="restaurant",
      *   requirements={
      *     "type"="(restaurant|store)",
@@ -208,7 +239,6 @@ class RestaurantController extends AbstractController
      *     "type"="restaurant"
      *   }
      * )
-     * @Template()
      */
     public function indexAction($type, $id, $slug, Request $request,
         SlugifyInterface $slugify,
@@ -379,7 +409,9 @@ class RestaurantController extends AbstractController
             $delay = $now->diffForHumans($future, ['syntax' => CarbonInterface::DIFF_ABSOLUTE]);
         }
 
-        return array(
+        $embed = $request->attributes->get('embed', false);
+
+        return $this->render($embed ? '@App/restaurant/embed.html.twig' : '@App/restaurant/index.html.twig', [
             'restaurant' => $restaurant,
             'structured_data' => $structuredData,
             'availabilities' => $this->orderTimeHelper->getAvailabilities($cart),
@@ -387,7 +419,7 @@ class RestaurantController extends AbstractController
             'delay' => $delay,
             'cart_form' => $cartForm->createView(),
             'addresses_normalized' => $this->getUserAddresses(),
-        );
+        ]);
     }
 
     /**
