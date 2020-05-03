@@ -252,6 +252,45 @@ class RestaurantController extends AbstractController
             throw new NotFoundHttpException();
         }
 
+        // $referer = $request->headers->get('referer');
+
+        // if (!is_string($referer) || !$referer) {
+        //     $request->getSession()->remove('__coopcycle_embed');
+        // } else {
+
+        //     // https://www.strangebuzz.com/en/snippets/get-the-routing-information-of-the-referer
+        //     $refererRequest = Request::create($referer);
+        //     $refererPathInfo = $refererRequest->getPathInfo();
+        //     $routeInfos = $this->get('router')->match($refererPathInfo);
+        //     $refererRoute = $routeInfos['_route'] ?? '';
+
+        //     if ('restaurant' !== $refererRoute) {
+        //         $request->getSession()->remove('__coopcycle_embed');
+        //     } else {
+        //         $wasEmbed =
+        //             $refererRequest->query->has('embed') && $refererRequest->query->getBoolean('embed', false);
+        //         if (!$wasEmbed) {
+        //             $request->getSession()->remove('__coopcycle_embed');
+        //         }
+        //     }
+        // }
+
+        if ($request->query->has('embed') && $request->query->getBoolean('embed', false)) {
+
+            $request->getSession()->set('__coopcycle_embed', 'yes');
+
+            // // TODO Redirect to canonical, avoid another 301
+            // return $this->redirectToRoute('restaurant', [
+            //     'type' => $type,
+            //     'id'   => $id,
+            //     'slug' => $slug,
+            // ]);
+        } else {
+            if ($request->isMethod('GET') && !$request->isXmlHttpRequest()) {
+                $request->getSession()->remove('__coopcycle_embed');
+            }
+        }
+
         $contextSlug = $this->getContextSlug($restaurant);
         $expectedSlug = $slugify->slugify($restaurant->getName());
 
@@ -397,7 +436,6 @@ class RestaurantController extends AbstractController
 
         $delay = null;
 
-
         Carbon::setLocale($request->attributes->get('_locale'));
 
         $now = Carbon::now();
@@ -409,9 +447,12 @@ class RestaurantController extends AbstractController
             $delay = $now->diffForHumans($future, ['syntax' => CarbonInterface::DIFF_ABSOLUTE]);
         }
 
-        $embed = $request->attributes->get('embed', false);
+        // $embed = $request->attributes->get('embed', false);
 
-        return $this->render($embed ? '@App/restaurant/embed.html.twig' : '@App/restaurant/index.html.twig', [
+        $isEmbed =
+            $request->getSession()->has('__coopcycle_embed') && 'yes' === $request->getSession()->get('__coopcycle_embed');
+
+        return $this->render($isEmbed ? '@App/restaurant/embed.html.twig' : '@App/restaurant/index.html.twig', [
             'restaurant' => $restaurant,
             'structured_data' => $structuredData,
             'availabilities' => $this->orderTimeHelper->getAvailabilities($cart),

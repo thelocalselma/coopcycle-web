@@ -44,8 +44,9 @@ window.addEventListener('DOMContentLoaded', () => {
     // console.log(uuid())
 
     const url = element.dataset.coopcycleEmbed
-    const regex = /^(https?:\/\/[^\/]+\/[a-z]{2})\/(restaurant|store)\/(.*)$/
-    const embedURL = url.replace(regex, '$1/embed/$2/$3')
+    // const regex = /^(https?:\/\/[^\/]+\/[a-z]{2})\/(restaurant|store)\/(.*)$/
+    // const embedURL = url.replace(regex, '$1/embed/$2/$3')
+    const embedURL = url + '?embed=yes'
 
     const container = document.createElement('div')
     container.innerHTML = modalHTML
@@ -62,6 +63,7 @@ window.addEventListener('DOMContentLoaded', () => {
       MicroModal.show(modalID, {
         onShow: modal => {
           const iframe = modal.querySelector('iframe')
+          // iframe.referrerPolicy = 'origin-when-cross-origin'
           if (!iframe.hasAttribute('src')) {
             iframe.setAttribute('src', embedURL)
           }

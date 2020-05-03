@@ -161,9 +161,12 @@ class OrderController extends AbstractController
             $isLoopEatValid = count($violations) === 0;
         }
 
-        $embed = $request->attributes->get('embed', false);
+        // $embed = $request->attributes->get('embed', false);
 
-        return $this->render($embed ? '@App/order/embed.html.twig' : '@App/order/index.html.twig', [
+        $isEmbed =
+            $request->getSession()->has('__coopcycle_embed') && 'yes' === $request->getSession()->get('__coopcycle_embed');
+
+        return $this->render($isEmbed ? '@App/order/embed.html.twig' : '@App/order/index.html.twig', [
             'order' => $order,
             'shipping_range' => $this->getShippingRange($order),
             'form' => $form->createView(),
