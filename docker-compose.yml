@@ -30,7 +30,7 @@ services:
       - '8001:8001'
       - '8002:8002'
     volumes:
-      - 'node_modules:/srv/coopcycle/node_modules'
+#      - 'node_modules:/srv/coopcycle/node_modules'
       - './:/srv/coopcycle:cached'
 
   webpack:
@@ -40,7 +40,7 @@ services:
     ports:
       - '8080:8080'
     volumes:
-      - 'node_modules:/srv/coopcycle/node_modules'
+#      - 'node_modules:/srv/coopcycle/node_modules'
       - './:/srv/coopcycle:cached'
 
   osrm:
@@ -174,7 +174,7 @@ services:
     image: tile38/tile38
 
 volumes:
-  node_modules:
+#  node_modules:
   pg_data:
   php_cache:
   minio_data:
