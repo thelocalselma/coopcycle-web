@@ -38,6 +38,8 @@ drink:
       reduced: 0.1
     fr:
       reduced: 0.055
+    us:
+      standard: 0.0725
 
 drink_alcohol:
   rates:

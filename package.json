@@ -4,7 +4,8 @@
   "description": "CoopCycle platform.",
   "main": "index.js",
   "scripts": {
-    "jest": "jest --config jest.config.js"
+    "jest": "jest --config jest.config.js",
+    "webpack-build": "webpack --config webpack.config.js"
   },
   "browserslist": [
     "> 5%",

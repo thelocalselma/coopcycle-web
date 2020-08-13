@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: tile38
+spec:
+  selector:
+    component: tile38
+  ports:
+    - protocol: TCP
+      port: 9851
+      targetPort: 9851

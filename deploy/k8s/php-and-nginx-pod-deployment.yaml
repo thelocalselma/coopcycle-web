@@ -1,0 +1,61 @@
+# Defines a k8s pod containing a PHP-FPM app and nginx webserver.
+# nginx talks to the PHP-FPM app through FastCGI.
+# nginx serves static resources copied from the app container.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: php-and-nginx-pod-deployment
+  labels:
+    component: php-and-nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: php-and-nginx
+  template:
+    metadata:
+      labels:
+        component: php-and-nginx
+    spec:
+      volumes:
+        # Shared files for nginx to serve and PHP to execute; fill upon start
+        - name: app-files
+          emptyDir: {}
+
+        # ConfigMap for nginx
+        - name: nginx-config-volume
+          configMap:
+            name: server-nginx-config
+
+        # Symfony .env file
+        - name: php-env-config
+          configMap:
+            name: php-env-config
+
+      containers:
+        # PHP-FPM symfony app
+        - image: jasonprado/coopcycle-web:latest
+          imagePullPolicy: Always
+          name: app
+          volumeMounts:
+            - name: app-files
+              mountPath: /var/www/html
+            - name: php-env-config
+              mountPath: /server/.env
+              subPath: .env
+
+          # After the app container starts, copy app resources out into the shared folder for nginx to serve.
+          lifecycle:
+            postStart:
+              exec:
+                command: ["/bin/sh", "-c", "cp -rp /server/. /var/www/html"]
+
+        - image: nginx:1.7.9
+          name: nginx
+          volumeMounts:
+            - name: app-files
+              mountPath: /var/www/html
+            - name: nginx-config-volume
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf

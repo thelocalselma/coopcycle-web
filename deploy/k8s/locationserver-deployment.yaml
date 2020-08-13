@@ -1,0 +1,34 @@
+# The locationserver is a node.js app built from js/api used to track location
+# data in real-time.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: locationserver-deployment
+  labels:
+    component: locationserver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      component: locationserver
+  template:
+    metadata:
+      labels:
+        component: locationserver
+    spec:
+      volumes:
+        # The location server shares the Symfony .env configuration
+        - name: php-env-config
+          configMap:
+            name: php-env-config
+
+      containers:
+      - name: locationserver
+        image: jasonprado/coopcycle-locationserver
+        ports:
+        - containerPort: 8000
+        - containerPort: 8001
+        volumeMounts:
+          - name: php-env-config
+            mountPath: /locationserver/.env
+            subPath: .env
