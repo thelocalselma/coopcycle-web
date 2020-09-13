@@ -15,11 +15,11 @@ data:
 
     http {
       upstream dispatch {
-        server nodejs:8000;
+        server locationserver:8000;
       }
 
       upstream tracking {
-        server nodejs:8001;
+        server locationserver:8001;
       }
 
       server {

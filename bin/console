@@ -28,11 +28,11 @@ if ($input->hasParameterOption('--no-debug', true)) {
     putenv('APP_DEBUG='.$_SERVER['APP_DEBUG'] = $_ENV['APP_DEBUG'] = '0');
 }
 
-// try {
-//     (new Dotenv(false))->loadEnv(dirname(__DIR__).'/.env');
-// } catch (PathException $e) {
-//     echo 'Warning: No environment file found at '.dirname(__DIR__).'/.env';
-// }
+try {
+    (new Dotenv(false))->loadEnv(dirname(__DIR__).'/.env');
+} catch (PathException $e) {
+    echo 'Warning: No environment file found at '.dirname(__DIR__).'/.env';
+}
 
 if ($_SERVER['APP_DEBUG']) {
     umask(0000);

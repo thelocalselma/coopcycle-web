@@ -9,7 +9,7 @@ Please read the next page of background information before getting started. A se
 * An S3-like object storage system
 * A PostgresSQL instance
 * A Redis instance
-* A Kubernetes cluster
+* A Kubernetes (k8s) cluster
 
 All of these are available from popular cloud providers: AWS, Google, Azure, DigitalOcean, and others.
 
@@ -17,22 +17,22 @@ All of these are available from popular cloud providers: AWS, Google, Azure, Dig
 ## Understanding the services in CoopCycle
 * `coopcycle-web` is a PHP webserver that serves a REST API and HTML pages to clients. It is where most of the business logic of the system lives.
 * The location server, built out of `coopcycle-web/js/api`, is a node.js application that serves location tracking APIs over WebSockets for tracking and dispatch.
-* Tile38 is an in-memory database for implementing geofencing features. You will need to host your own Tile38 server.
-* OSRM is a routing system for road navigation. You will need to host your own OSRM server.
+* Tile38 is an in-memory database for implementing geofencing features. You will need to host your own Tile38 server. A configuration is included in the `k8s/` directory.
+* OSRM is a routing system for road navigation. You will need to host your own OSRM server. A configuration is included in the `k8s/` directory.
 * Redis is an in-memory cache database. While you may host your own instance of it, it is recommended you utilize a cloud provider's hosting.
 * PostgresSQL is a persistent relational database. While you may host your own instance of it, it is recommended you utilize a cloud provider's hosting.
 
 
-## Understanding containers: docker-compose vs deploying containers vs kubernetes
+## Understanding deployment options: docker-compose vs deploying containers vs Kubernetes
 Each component of the CoopCycle deployment lives in its own container. There are several ways to use these containers.
 
 * For local development and prototyping, a docker-compose file is provided in the project root. Bringing up this set of services will quickly provide you with a running instance of CoopCycle, but it is not suitable for production deployment.
+* You can use the Kubernetes configuration in this repository to quickly deploy a production-ready instance of CoopCycle on a cloud host. Kubernetes adds technical complexity to the implementation but you can skip a lot of work by using the k8s configurations as written.
 * Since each component of CoopCycle is containerized, you can run each docker image individually and configure them to connect manually. The docker-compose and k8s files serve as good documentation on how the services expect to communicate. This requires manual work but it is flexible.
-* You can use the kubernetes configuration in this repository to quickly deploy a production-ready instance of CoopCycle on a cloud host. Kubernetes adds technical complexity to the implementation but you can skip a lot of work by using the k8s configurations as written.
 
 
 ## Configuring `.env` for deployment
-Instance-specific configuration lives by convention in the `.env` file. Begin by coping `.env.dist` to `.env`. You should visit all of these settings, but here is a quick tour of settings you will need to modify right away:
+Instance-specific configuration lives by convention in the `.env` file. Begin by copying `.env.dist` to `.env`. You should visit all of these settings, but here is a quick tour of settings you will need to modify right away:
 
 * App configuration
 ```
@@ -68,7 +68,8 @@ COOPCYCLE_REDIS_DSN=redis://<Your Redis auth key>@<Your Redis host>:15231
 ```
 
 * Tile38 & OSRM
-If you are using the kubernetes deployment, or if you are setting up containers for Tile38 and OSRM such that their hostnames are `tile38` and `osrm`, you can use these defaults:
+
+If you are using the Kubernetes deployment, or if you are setting up containers for Tile38 and OSRM such that their hostnames are `tile38` and `osrm`, you can keep these defaults:
 ```
 COOPCYCLE_TILE38_DSN=redis://tile38:9851
 COOPCYCLE_OSRM_HOST=osrm:5000
@@ -84,10 +85,19 @@ The PostgresSQL database must be initialized with a schema and some initial data
 
 ## Kubernetes deployment
 * After configuring your `.env` (or `.env.production`) file, upload it as a ConfigMap to your cluster:
-`> kubectl create configmap php-env-config --from-file=.env`
+```
+> kubectl create configmap php-env-config --from-file=.env
+```
+
+** When you update `.env`, you will need to replace the ConfigMap:
+```
+kubectl create configmap php-env-config --from-file .env -o yaml --dry-run=client | kubectl replace -f -
+```
 
 * Apply the k8s configuration YAML files:
-`> kubectl apply -f deploy/k8s/`
+```
+> kubectl apply -f deploy/k8s/
+```
 
 * Get the IP of the `php-and-nginx-service` service and open it in your browser:
 ```
@@ -106,3 +116,8 @@ Besides starting your cooperative, you will need to configure several other serv
 * Matomo analytics configuration
 * Sentry error-logging configuration
 * Mail service
+
+
+## Todo (development)
+* Bring up and connect OSRM pod
+* Map `var/jwt` using secrets

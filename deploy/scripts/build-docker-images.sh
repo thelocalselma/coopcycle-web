@@ -37,5 +37,5 @@ done
 set -x
 
 cd "$APP_DIR"
-docker build . -f deploy/docker/php/Dockerfile -t "$CONTAINER_TAG_PREFIX/coopcycle-web"
-docker build . -f deploy/docker/nodejs/Dockerfile -t "$CONTAINER_TAG_PREFIX/coopcycle-locationserver"
+docker build . -f docker/php/Dockerfile -t "$CONTAINER_TAG_PREFIX/coopcycle-web"
+docker build . -f docker/locationserver/Dockerfile -t "$CONTAINER_TAG_PREFIX/coopcycle-locationserver"

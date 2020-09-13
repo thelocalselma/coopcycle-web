@@ -44,3 +44,4 @@
 .docker-sync
 
 .env
+.env.production
