@@ -80,7 +80,7 @@ _Tip: If you want to have one `.env` for local development and another for deplo
 
 
 ## Creating the demo database
-The PostgresSQL database must be initialized with a schema and some initial data. After configuring the `.env` file, execute `make install`. This will require network access to the database specified in `.env`.
+The PostgresSQL database must be initialized with a schema and some initial data. After configuring the `.env` file, execute `deploy/scripts/create-schema.sh`. This will require network access to the database specified in `.env`.
 
 
 ## Kubernetes deployment
