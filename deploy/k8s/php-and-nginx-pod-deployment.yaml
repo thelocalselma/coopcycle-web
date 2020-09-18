@@ -49,7 +49,7 @@ spec:
           lifecycle:
             postStart:
               exec:
-                command: ["/bin/sh", "-c", "cp -rp /server/. /var/www/html"]
+                command: ["/bin/sh", "-c", "cp -rp /server/. /var/www/html || true"]
 
         - image: nginx:1.7.9
           name: nginx
