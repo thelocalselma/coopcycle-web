@@ -1,0 +1,18 @@
+# OSRM is a high-performance routing engine for shortest path computation.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: osrm-pod
+  labels:
+    component: osrm
+spec:
+  containers:
+  - image: mpancia/coopcycle:osrm
+    name: osrm
+    ports:
+    - containerPort: 5000
+  volumes:
+      - name: osrm-data
+        hostPath: 
+          path: /data
+          type: Directory
