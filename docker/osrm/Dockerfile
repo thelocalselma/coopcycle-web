@@ -12,10 +12,10 @@ COPY ./start.sh /usr/local/bin/osrm-start
 
 RUN chmod +x /usr/local/bin/osrm-start
 
-RUN mkdir /data
-RUN wget --no-check-certificate $OSM_DATA_URL -O /data/data.osm.pbf
-RUN osrm-extract -p /opt/$OSM_PROFILE.lua /data/data.osm.pbf
-RUN osrm-partition /data/data.osrm
-RUN osrm-customize /data/data.osrm
+RUN mkdir /data && \
+    wget --no-check-certificate $OSM_DATA_URL -O /data/data.osm.pbf && \
+    osrm-extract -p /opt/$OSM_PROFILE.lua /data/data.osm.pbf && \
+    osrm-partition /data/data.osrm && \
+    osrm-customize /data/data.osrm
 
 CMD ["osrm-start"]
