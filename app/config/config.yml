@@ -41,6 +41,8 @@ parameters:
     is_demo: "%env(bool:COOPCYCLE_DEMO)%"
     sentry_public_dsn: "%env(COOPCYCLE_SENTRY_DSN)%"
     foodtech_enabled: "%env(bool:COOPCYCLE_FOODTECH_ENABLED)%"
+    android_app_enabled: "%env(bool:ANDROID_APP_ENABLED)%"
+    ios_app_enabled: "%env(bool:IOS_APP_ENABLED)%"
     b2b_enabled: '%env(bool:COOPCYCLE_B2B_ENABLED)%'
 
 services:
