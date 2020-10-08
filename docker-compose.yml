@@ -1,4 +1,4 @@
-version: '3'
+version: '3.4'
 
 services:
 
@@ -56,6 +56,7 @@ services:
     build:
       dockerfile: './docker/php/Dockerfile'
       context: '.'
+      target: base
     image: coopcycle/php
     depends_on:
       - postgres
@@ -72,8 +73,8 @@ services:
       - STRIPE_PUBLISHABLE_KEY
       - STRIPE_SECRET_KEY
     volumes:
-      - 'php_cache:/var/www/html/var/cache'
-      - './:/var/www/html:cached'
+      - './:/server:cached'
+      - 'php_cache:/server/var/cache'
     cap_add:
       - SYS_ADMIN
 
@@ -101,8 +102,8 @@ services:
       - '80:80'
     volumes:
       - './docker/nginx/conf.d:/etc/nginx/conf.d:ro'
-      - './web:/var/www/html/web:ro'
-      - './vendor:/var/www/html/vendor:ro'
+      - './web:/server/web:ro'
+      - './vendor:/server/vendor:ro'
 
   nginx_test:
     image: 'nginx:1.11-alpine'
