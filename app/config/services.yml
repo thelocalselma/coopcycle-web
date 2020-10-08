@@ -755,7 +755,7 @@ services:
           credentials:
             key: '%env(S3_CREDENTIALS_KEY)%'
             secret: '%env(S3_CREDENTIALS_SECRET)%'
-          use_path_style_endpoint: true
+          use_path_style_endpoint: '%env(bool:S3_USE_PATH_STYLE_ENDPOINT)%'
 
   AppBundle\Service\StripeManager:
     arguments:
