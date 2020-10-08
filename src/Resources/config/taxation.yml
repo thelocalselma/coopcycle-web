@@ -14,8 +14,8 @@ service:
       standard: 0.20
     pl:
       standard: 0.23
-    ar:
-      standard: 0.21
+    us:
+      standard: 0.20
 
 service_tax_exempt:
   rates:
@@ -33,7 +33,7 @@ service_tax_exempt:
       zero: 0.0
     pl:
       zero: 0.0
-    ar:
+    us:
       zero: 0.0
 
 drink:
@@ -42,6 +42,8 @@ drink:
       reduced: 0.1
     fr:
       reduced: 0.055
+    us:
+      standard: 0.0725
 
 drink_alcohol:
   rates:
@@ -60,6 +62,8 @@ drink_alcohol:
       standard: 0.20
     pl:
       standard: 0.23
+    us:
+      standard: 0.08
 
 food:
   rates:
@@ -80,6 +84,8 @@ food_takeaway:
       zero: 0.0
     pl:
       intermediary: 0.08
+    us:
+      standard: 0.08
 
 jewelry:
   rates:
@@ -103,8 +109,8 @@ base_standard:
       standard: 0.20
     pl:
       standard: 0.23
-    ar:
-      standard: 0.21
+    us:
+      standard: 0.20
 
 base_intermediary:
   rates:
@@ -118,8 +124,8 @@ base_intermediary:
       intermediary: 0.1
     pl:
       intermediary: 0.08
-    ar:
-      intermediary: 0.105
+    us:
+      intermediary: 0.08
 
 base_reduced:
   rates:
@@ -137,5 +143,5 @@ base_reduced:
       reduced: 0.05
     pl:
       reduced: 0.05
-    ar:
-      reduced: 0.025
+    us:
+      reduced: 0.05
