@@ -91,7 +91,7 @@ class OrderController extends AbstractController
 
         $order = $cartContext->getCart();
 
-        if (null === $order || null === $order->getRestaurant()) {
+        if (null === $order || null === $order->getVendor()) {
 
             return $this->redirectToRoute('homepage');
         }
@@ -154,6 +154,12 @@ class OrderController extends AbstractController
 
             if ($form->isValid()) {
 
+                // https://github.com/coopcycle/coopcycle-web/issues/1910
+                // Maybe a better would be to use "empty_data" option in CheckoutAddressType
+                if (null !== $originalPromotionCoupon && null === $order->getPromotionCoupon()) {
+                    $order->setPromotionCoupon($originalPromotionCoupon);
+                }
+
                 $orderProcessor->process($order);
 
                 $isQuote = $form->getClickedButton() && 'quote' === $form->getClickedButton()->getName();
@@ -201,7 +207,7 @@ class OrderController extends AbstractController
 
         $order = $cartContext->getCart();
 
-        if (null === $order || null === $order->getRestaurant()) {
+        if (null === $order || null === $order->getVendor()) {
 
             return $this->redirectToRoute('homepage');
         }
@@ -216,7 +222,6 @@ class OrderController extends AbstractController
 
         $parameters =  [
             'order' => $order,
-            'restaurant' => $order->getRestaurant(),
             'shipping_range' => $this->getShippingRange($order),
         ];
 

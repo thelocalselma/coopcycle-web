@@ -28,6 +28,7 @@ use AppBundle\Entity\Sylius\OrderRepository;
 use AppBundle\Entity\Tag;
 use AppBundle\Entity\Task;
 use AppBundle\Entity\TimeSlot;
+use AppBundle\Entity\Vendor;
 use AppBundle\Entity\Zone;
 use AppBundle\Form\AddOrganizationType;
 use AppBundle\Form\AttachToOrganizationType;
@@ -61,6 +62,7 @@ use AppBundle\Service\SettingsManager;
 use AppBundle\Service\TagManager;
 use AppBundle\Sylius\Order\OrderInterface;
 use AppBundle\Sylius\Promotion\Action\FixedDiscountPromotionActionCommand;
+use AppBundle\Sylius\Promotion\Action\PercentageDiscountPromotionActionCommand;
 use AppBundle\Sylius\Promotion\Checker\Rule\IsCustomerRuleChecker;
 use AppBundle\Sylius\Promotion\Checker\Rule\IsRestaurantRuleChecker;
 use AppBundle\Utils\MessageLoggingTwigSwiftMailer;
@@ -607,7 +609,8 @@ class AdminController extends Controller
         // Allow filtering by store & restaurant with KnpPaginator
         $qb->leftJoin(Store::class, 's', Expr\Join::WITH, 's.id = d.store');
         $qb->leftJoin(Order::class, 'o', Expr\Join::WITH, 'o.id = d.order');
-        $qb->leftJoin(LocalBusiness::class, 'r', Expr\Join::WITH, 'r.id = o.restaurant');
+        $qb->leftJoin(Vendor::class, 'v', Expr\Join::WITH, 'o.vendor = v.id');
+        $qb->leftJoin(LocalBusiness::class, 'r', Expr\Join::WITH, 'v.restaurant = r.id');
 
         $deliveries = $this->get('knp_paginator')->paginate(
             $qb,
@@ -1336,28 +1339,14 @@ class AdminController extends Controller
      */
     public function promotionsAction(Request $request)
     {
-        $promotions = $this->get('sylius.repository.promotion')->findAll();
+        $qb = $this->get('sylius.repository.promotion_coupon')->createQueryBuilder('c');
+        $qb->andWhere('c.expiresAt IS NULL OR c.expiresAt > :date');
+        $qb->setParameter('date', new \DateTime());
 
-        $promotionCoupons = $this->get('sylius.repository.promotion_coupon')->findAll();
-
-        $freeDeliveryCoupons = [];
-        $creditNoteCoupons = [];
-
-        foreach ($promotionCoupons as $promotionCoupon) {
-            if ($promotionCoupon->getPromotion()->getCode() === 'FREE_DELIVERY') {
-                $freeDeliveryCoupons[] = $promotionCoupon;
-            } else {
-                $creditNoteCoupons[] = $promotionCoupon;
-            }
-        }
-
-        $freeDeliveryPromotion = $this->get('sylius.repository.promotion')->findOneByCode('FREE_DELIVERY');
+        $promotionCoupons = $qb->getQuery()->getResult();
 
         return $this->render('admin/promotions.html.twig', [
-            'promotions' => $promotions,
-            'free_delivery_coupons' => $freeDeliveryCoupons,
-            'credit_note_coupons' => $creditNoteCoupons,
-            'free_delivery_promotion' => $freeDeliveryPromotion,
+            'promotion_coupons' => $promotionCoupons,
         ]);
     }
 
@@ -1393,7 +1382,9 @@ class AdminController extends Controller
      */
     public function newCreditNoteAction(Request $request)
     {
-        $form = $this->createForm(CreditNoteType::class);
+        $form = $this->createForm(CreditNoteType::class, [
+            'type' => FixedDiscountPromotionActionCommand::TYPE
+        ]);
 
         $form->handleRequest($request);
         if ($form->isSubmitted() && $form->isValid()) {
@@ -1407,13 +1398,22 @@ class AdminController extends Controller
             $promotion->setPriority(1);
 
             $promotionAction = new PromotionAction();
-            $promotionAction->setType(FixedDiscountPromotionActionCommand::TYPE);
-            $promotionAction->setConfiguration([
-                'amount' => $data['amount']
-            ]);
+            $promotionAction->setType($data['type']);
+
+            $promotionActionConfiguration = [];
+            switch ($data['type']) {
+                case FixedDiscountPromotionActionCommand::TYPE:
+                    $promotionActionConfiguration = ['amount' => $data['amount']];
+                    break;
+                case PercentageDiscountPromotionActionCommand::TYPE:
+                    $promotionActionConfiguration = ['percentage' => $data['percentage']];
+                    break;
+            }
+            $promotionAction->setConfiguration($promotionActionConfiguration);
 
             $promotion->addAction($promotionAction);
 
+            // TODO Make this optional
             $promotionRule = $this->get('sylius.factory.promotion_rule')->createNew();
             $promotionRule->setType(IsCustomerRuleChecker::TYPE);
             $promotionRule->setConfiguration([
@@ -1452,6 +1452,25 @@ class AdminController extends Controller
         return $this->render('admin/promotion_credit_note.html.twig', [
             'form' => $form->createView(),
         ]);
+    }
+
+    /**
+     * @Route("/admin/promotions/coupons/new", name="admin_new_promotion_coupon_from_template")
+     */
+    public function newPromotionCouponFromTemplateAction(Request $request)
+    {
+        $template = $request->query->get('template');
+
+        switch ($template) {
+            case 'credit_note':
+                return $this->newCreditNoteAction($request);
+            case 'free_delivery':
+                $promotion = $this->get('sylius.repository.promotion')->findOneByCode('FREE_DELIVERY');
+
+                return $this->redirectToRoute('admin_new_promotion_coupon', ['id' => $promotion->getId()]);
+        }
+
+        return $this->createNotFoundException();
     }
 
     private function isUsedCouponCode(string $code): bool

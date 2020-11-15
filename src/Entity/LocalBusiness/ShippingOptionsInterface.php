@@ -2,15 +2,27 @@
 
 namespace AppBundle\Entity\LocalBusiness;
 
+use AppBundle\Entity\Address;
+use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
+
 interface ShippingOptionsInterface
 {
     /**
      * @return int
      */
-    public function getOrderingDelayMinutes();
+    public function getShippingOptionsDays();
 
     /**
-     * @return int
+     * @return string
      */
-    public function getShippingOptionsDays();
+    public function getDeliveryPerimeterExpression();
+
+    /**
+     * @param Address $address
+     * @param int $distance
+     * @param ExpressionLanguage|null $language
+     *
+     * @return bool
+     */
+    public function canDeliverAddress(Address $address, $distance, ExpressionLanguage $language = null);
 }

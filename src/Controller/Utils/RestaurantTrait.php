@@ -12,7 +12,10 @@ use AppBundle\Entity\Restaurant\PreparationTimeRule;
 use AppBundle\Entity\ReusablePackaging;
 use AppBundle\Entity\StripeAccount;
 use AppBundle\Entity\Sylius\Order;
+use AppBundle\Entity\Sylius\Product;
+use AppBundle\Entity\Sylius\ProductImage;
 use AppBundle\Entity\Sylius\ProductTaxon;
+use AppBundle\Entity\Vendor;
 use AppBundle\Entity\Zone;
 use AppBundle\Form\ClosingRuleType;
 use AppBundle\Form\MenuEditorType;
@@ -35,24 +38,30 @@ use AppBundle\Utils\RestaurantStats;
 use AppBundle\Utils\ValidationUtils;
 use Cocur\Slugify\SlugifyInterface;
 use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\ORM\Query\Expr;
+use Knp\Component\Pager\PaginatorInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Services\JWTManagerInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Encoder\JWTEncoderInterface;
 use MercadoPago;
 use Ramsey\Uuid\Uuid;
 use Sylius\Component\Locale\Provider\LocaleProviderInterface;
 use Sylius\Component\Order\Model\OrderInterface;
+use Sylius\Component\Product\Model\ProductTranslation;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
 use Symfony\Component\Form\Extension\Core\Type\SubmitType;
 use Symfony\Component\Form\FormError;
 use Symfony\Component\Form\FormInterface;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use Symfony\Component\Validator\ConstraintViolationList;
 use Symfony\Component\Validator\Validation;
+use Vich\UploaderBundle\Handler\UploadHandler;
 
 trait RestaurantTrait
 {
@@ -290,7 +299,8 @@ trait RestaurantTrait
 
         $qb = $this->get('sylius.repository.order')
             ->createQueryBuilder('o')
-            ->andWhere('o.restaurant = :restaurant')
+            ->join(Vendor::class, 'v', Expr\Join::WITH, 'o.vendor = v.id')
+            ->andWhere('v.restaurant = :restaurant')
             ->andWhere('OVERLAPS(o.shippingTimeRange, CAST(:range AS tsrange)) = TRUE')
             ->andWhere('o.state != :state')
             ->setParameter('restaurant', $restaurant)
@@ -650,19 +660,34 @@ trait RestaurantTrait
 
         $this->accessControl($restaurant);
 
-        $routes = $request->attributes->get('routes');
+        $qb = $this->getDoctrine()
+            ->getRepository(Product::class)
+            ->createQueryBuilder('p');
+        $qb->innerJoin(ProductTranslation::class, 't', Expr\Join::WITH, 't.translatable = p.id');
+        $qb->innerJoin(LocalBusiness::class, 'r', Expr\Join::WITH, '1 = 1');
+        $qb->innerJoin('r.products', 'rp');
+        $qb->andWhere('r.id = :restaurant');
+        $qb->andWhere('p.id = rp.id');
+        $qb->setParameter('restaurant', $restaurant);
 
-        // TODO Use Criteria API for ordering
-        $products = $restaurant->getProducts()->toArray();
-        usort($products, function ($a, $b) {
-            return $a->getName() < $b->getName() ? -1 : 1;
-        });
+        $products = $this->get('knp_paginator')->paginate(
+            $qb,
+            $request->query->getInt('page', 1),
+            10,
+            [
+                PaginatorInterface::DEFAULT_SORT_FIELD_NAME => 't.name',
+                PaginatorInterface::DEFAULT_SORT_DIRECTION => 'asc',
+                PaginatorInterface::SORT_FIELD_WHITELIST => ['t.name'],
+            ]
+        );
 
         $forms = [];
         foreach ($products as $product) {
             $forms[$product->getId()] =
                 $this->createRestaurantProductForm($restaurant, $product)->createView();
         }
+
+        $routes = $request->attributes->get('routes');
 
         return $this->render($request->attributes->get('template'), $this->withRoutes([
             'layout' => $request->attributes->get('layout'),
@@ -825,7 +850,9 @@ trait RestaurantTrait
         ], $routes));
     }
 
-    public function restaurantProductOptionPreviewAction(Request $request, LocaleProviderInterface $localeProvider)
+    public function restaurantProductOptionPreviewAction(Request $request,
+        NormalizerInterface $serializer,
+        LocaleProviderInterface $localeProvider)
     {
         $productOption = $this->get('sylius.factory.product_option')
             ->createNew();
@@ -845,12 +872,9 @@ trait RestaurantTrait
                 }
             }
 
-            return $this->render('restaurant/_partials/option.html.twig', $this->withRoutes([
-                'product' => [
-                    'code' => Uuid::uuid4()->toString()
-                ],
-                'option' => $productOption,
-            ]));
+            return new JsonResponse(
+                $serializer->normalize($productOption, 'json', ['groups' => ['product_option']])
+            );
         }
 
         throw new BadRequestHttpException();
@@ -1290,5 +1314,42 @@ trait RestaurantTrait
         // TODO Implement
 
         throw $this->createNotFoundException();
+    }
+
+    public function deleteProductImageAction($restaurantId, $productId, $imageName,
+        Request $request,
+        UploadHandler $uploadHandler)
+    {
+        $restaurant = $this->getDoctrine()
+            ->getRepository(LocalBusiness::class)
+            ->find($restaurantId);
+
+        $this->accessControl($restaurant);
+
+        $product = $this->get('sylius.repository.product')
+            ->find($productId);
+
+        if (!$product) {
+            throw $this->createNotFoundException();
+        }
+
+        $image = $this->getDoctrine()
+            ->getRepository(ProductImage::class)
+            ->findOneByImageName($imageName);
+
+        if (!$image) {
+            throw $this->createNotFoundException();
+        }
+
+        if (!$product->getImages()->contains($image)) {
+            throw new BadRequestHttpException(sprintf('Product "%s" does not belong to product #%d', $imageName, $productId));
+        }
+
+        $uploadHandler->remove($image, 'imageFile');
+
+        $product->getImages()->removeElement($image);
+        $this->getDoctrine()->getManagerForClass(Product::class)->flush();
+
+        return new Response('', 204);
     }
 }

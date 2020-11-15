@@ -62,6 +62,7 @@ COPY docker/php/php.ini /usr/local/etc/php/php.ini
 COPY docker/php/install-composer.sh /usr/local/bin/docker-app-install-composer
 
 RUN chmod +x /usr/local/bin/docker-app-install-composer
+COPY docker/php/enable-xdebug.sh /usr/local/bin/enable-xdebug
 
 RUN set -xe \
     && apk add --no-cache --virtual .fetch-deps \
@@ -70,10 +71,10 @@ RUN set -xe \
     && mv composer.phar /usr/local/bin/composer \
     && apk del .fetch-deps
 
-RUN composer global require "hirak/prestissimo"
-
 COPY docker/php/start.sh /usr/local/bin/docker-app-start
+COPY docker/php/enable-xdebug.sh /usr/local/bin/enable-xdebug
 RUN chmod +x /usr/local/bin/docker-app-start
+RUN chmod +x /usr/local/bin/enable-xdebug
 
 # Add healthcheck for PHP-FPM
 # https://github.com/docker-library/php/issues/366

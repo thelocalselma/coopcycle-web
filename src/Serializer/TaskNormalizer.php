@@ -104,6 +104,10 @@ class TaskNormalizer implements NormalizerInterface, DenormalizerInterface
             }
         }
 
+        if (isset($data['type'])) {
+            $data['type'] = strtoupper($data['type']);
+        }
+
         $task = $this->normalizer->denormalize($data, $class, $format, $context);
 
         if (null === $task->getId() && null !== $task->getAddress()) {

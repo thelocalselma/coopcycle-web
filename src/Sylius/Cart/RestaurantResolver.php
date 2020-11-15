@@ -2,11 +2,14 @@
 
 namespace AppBundle\Sylius\Cart;
 
+use AppBundle\Entity\HubRepository;
 use AppBundle\Entity\LocalBusiness;
 use AppBundle\Entity\LocalBusinessRepository;
+use AppBundle\Entity\Vendor;
 use AppBundle\Sylius\Order\OrderInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
+use Webmozart\Assert\Assert;
 
 class RestaurantResolver
 {
@@ -35,11 +38,13 @@ class RestaurantResolver
     public function __construct(
         RequestStack $requestStack,
         LocalBusinessRepository $repository,
-        EntityManagerInterface $entityManager)
+        EntityManagerInterface $entityManager,
+        HubRepository $hubRepository)
     {
         $this->requestStack = $requestStack;
         $this->repository = $repository;
         $this->entityManager = $entityManager;
+        $this->hubRepository = $hubRepository;
     }
 
     /**
@@ -78,8 +83,8 @@ class RestaurantResolver
             return true;
         }
 
-        if (!isset($data['restaurant'])) {
-            throw new \LogicException('No "restaurant" key found in original entity data. The column may have been renamed.');
+        if (!isset($data['vendor'])) {
+            throw new \LogicException('No "vendor" key found in original entity data. The column may have been renamed.');
         }
 
         $restaurant = $this->resolve();
@@ -92,6 +97,43 @@ class RestaurantResolver
             return true;
         }
 
-        return $data['restaurant'] === $restaurant;
+        Assert::isInstanceOf($data['vendor'], Vendor::class);
+
+        $vendor = $data['vendor'];
+
+        if ($vendor->isHub()) {
+            $hub = $this->hubRepository->findOneByRestaurant($restaurant);
+
+            return $vendor->getHub() === $hub;
+        }
+
+        if ($vendor->getRestaurant() !== $restaurant) {
+
+            $thisHub = $this->hubRepository->findOneByRestaurant($data['vendor']->getRestaurant());
+            $thatHub = $this->hubRepository->findOneByRestaurant($restaurant);
+
+            if (null !== $thisHub && null !== $thatHub && $thisHub === $thatHub) {
+                return true;
+            }
+        }
+
+        return $vendor->getRestaurant() === $restaurant;
+    }
+
+    public function changeVendor(OrderInterface $cart)
+    {
+        $isSingle = $cart->getVendor()->getRestaurant() !== null;
+
+        $restaurant = $this->resolve();
+
+        if ($isSingle && $cart->getVendor()->getRestaurant() !== $restaurant) {
+            $hub = $this->hubRepository->findOneByRestaurant($restaurant);
+            if ($hub) {
+                $vendor = new Vendor();
+                $vendor->setHub($hub);
+
+                $cart->setVendor($vendor);
+            }
+        }
     }
 }

@@ -9,6 +9,7 @@ use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\CollectionType;
 use Symfony\Component\Form\Extension\Core\Type\HiddenType;
+use Symfony\Component\Form\Extension\Core\Type\IntegerType;
 use Symfony\Component\Form\FormBuilderInterface;
 use Symfony\Component\Form\FormEvent;
 use Symfony\Component\Form\FormEvents;
@@ -48,9 +49,6 @@ class FulfillmentMethodType extends AbstractType
                 ],
                 'expanded' => true,
                 'multiple' => false,
-            ])
-            ->add('minimumAmount', MoneyType::class, [
-                'label' => 'restaurant.contract.minimumCartAmount.label',
             ]);
 
         if ($this->authorizationChecker->isGranted('ROLE_ADMIN')) {
@@ -65,12 +63,28 @@ class FulfillmentMethodType extends AbstractType
             $form = $event->getForm();
             $fulfillmentMethod = $event->getData();
 
-            if ($form->has('allowEdit')) {
-                $allowEdit = $fulfillmentMethod->hasOption('allow_edit')
-                    && true === $fulfillmentMethod->getOption('allow_edit');
+            $allowEdit =
+                ($fulfillmentMethod->hasOption('allow_edit') && true === $fulfillmentMethod->getOption('allow_edit'));
 
+            if ($form->has('allowEdit')) {
                 $form->get('allowEdit')->setData($allowEdit);
             }
+
+            $form
+                ->add('minimumAmount', MoneyType::class, [
+                    'label' => 'restaurant.contract.minimumCartAmount.label',
+                    'disabled' => !$allowEdit,
+                ])
+                ->add('orderingDelayDays', IntegerType::class, [
+                    'label' => 'localBusiness.form.orderingDelayDays',
+                    'mapped' => false,
+                    'disabled' => !$allowEdit,
+                ])
+                ->add('orderingDelayHours', IntegerType::class, [
+                    'label' => 'localBusiness.form.orderingDelayHours',
+                    'mapped' => false,
+                    'disabled' => !$allowEdit,
+                ]);
         });
 
         $builder->addEventListener(FormEvents::POST_SUBMIT, function (FormEvent $event) {
@@ -90,6 +104,33 @@ class FulfillmentMethodType extends AbstractType
                 );
             }
         });
+
+        $builder->addEventListener(FormEvents::POST_SET_DATA, function (FormEvent $event) {
+
+            $fulfillmentMethod = $event->getData();
+            $form = $event->getForm();
+
+            $orderingDelayMinutes = $fulfillmentMethod->getOrderingDelayMinutes();
+            $orderingDelayDays = $orderingDelayMinutes / (60 * 24);
+            $remainder = $orderingDelayMinutes % (60 * 24);
+            $orderingDelayHours = $remainder / 60;
+
+            $form->get('orderingDelayHours')->setData($orderingDelayHours);
+            $form->get('orderingDelayDays')->setData($orderingDelayDays);
+        });
+
+        $builder->addEventListener(FormEvents::POST_SUBMIT, function (FormEvent $event) {
+
+            $form = $event->getForm();
+            $fulfillmentMethod = $form->getData();
+
+            $orderingDelayDays = $form->get('orderingDelayDays')->getData();
+            $orderingDelayHours = $form->get('orderingDelayHours')->getData();
+
+            $fulfillmentMethod->setOrderingDelayMinutes(
+                ($orderingDelayDays * 60 * 24) + ($orderingDelayHours * 60)
+            );
+        });
     }
 
     public function configureOptions(OptionsResolver $resolver)
@@ -99,4 +140,3 @@ class FulfillmentMethodType extends AbstractType
         ));
     }
 }
-

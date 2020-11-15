@@ -11,6 +11,7 @@ use AppBundle\Sylius\Order\OrderInterface;
 use AppBundle\Sylius\Order\OrderItemInterface;
 use AppBundle\Entity\User;
 use AppBundle\Entity\Address;
+use AppBundle\Entity\Hub;
 use AppBundle\Entity\LocalBusiness;
 use AppBundle\Entity\LocalBusinessRepository;
 use AppBundle\Entity\Restaurant\Pledge;
@@ -24,6 +25,7 @@ use AppBundle\Service\EmailManager;
 use AppBundle\Service\SettingsManager;
 use AppBundle\Sylius\Cart\RestaurantResolver;
 use AppBundle\Sylius\Order\OrderFactory;
+use AppBundle\Utils\OptionsPayloadConverter;
 use AppBundle\Utils\OrderTimeHelper;
 use AppBundle\Utils\ValidationUtils;
 use Cocur\Slugify\SlugifyInterface;
@@ -92,7 +94,6 @@ class RestaurantController extends AbstractController
         RepositoryInterface $orderItemRepository,
         $orderItemFactory,
         $productVariantResolver,
-        RepositoryInterface $productOptionValueRepository,
         $orderItemQuantityModifier,
         $orderModifier,
         OrderTimeHelper $orderTimeHelper,
@@ -104,7 +105,6 @@ class RestaurantController extends AbstractController
         $this->orderItemRepository = $orderItemRepository;
         $this->orderItemFactory = $orderItemFactory;
         $this->productVariantResolver = $productVariantResolver;
-        $this->productOptionValueRepository = $productOptionValueRepository;
         $this->orderItemQuantityModifier = $orderItemQuantityModifier;
         $this->orderModifier = $orderModifier;
         $this->orderTimeHelper = $orderTimeHelper;
@@ -170,6 +170,44 @@ class RestaurantController extends AbstractController
             'address' => $request->query->has('address') ? $request->query->get('address') : null,
             'local_business_context' => $repository->getContext(),
         ));
+    }
+
+    /**
+     * @Route("/hub/{id}-{slug}", name="hub",
+     *   requirements={
+     *     "id"="(\d+)",
+     *     "slug"="([a-z0-9-]+)"
+     *   },
+     *   defaults={
+     *     "slug"=""
+     *   }
+     * )
+     */
+    public function hubAction($id, $slug, Request $request,
+        SlugifyInterface $slugify,
+        CartContextInterface $cartContext,
+        IriConverterInterface $iriConverter)
+    {
+        $hub = $this->getDoctrine()->getRepository(Hub::class)->find($id);
+
+        if (!$hub) {
+            throw new NotFoundHttpException();
+        }
+
+        $expectedSlug = $slugify->slugify($hub->getName());
+        $redirectToCanonicalRoute = $slug !== $expectedSlug;
+
+        if ($redirectToCanonicalRoute) {
+
+            return $this->redirectToRoute('hub', [
+                'id' => $id,
+                'slug' => $expectedSlug,
+            ], Response::HTTP_MOVED_PERMANENTLY);
+        }
+
+        return $this->render('restaurant/hub.html.twig', [
+            'hub' => $hub,
+        ]);
     }
 
     /**
@@ -327,7 +365,8 @@ class RestaurantController extends AbstractController
      */
     public function changeAddressAction($id, Request $request,
         CartContextInterface $cartContext,
-        IriConverterInterface $iriConverter)
+        IriConverterInterface $iriConverter,
+        RestaurantResolver $restaurantResolver)
     {
         $restaurant = $this->getDoctrine()
             ->getRepository(LocalBusiness::class)->find($id);
@@ -350,8 +389,10 @@ class RestaurantController extends AbstractController
                 if ($user->getAddresses()->contains($shippingAddress)) {
                     $cart->setShippingAddress($shippingAddress);
 
-                    $this->orderManager->persist($cart);
-                    $this->orderManager->flush();
+                    if ($restaurantResolver->accept($cart)) {
+                        $this->orderManager->persist($cart);
+                        $this->orderManager->flush();
+                    }
                 }
 
             } catch (ItemNotFoundException $e) {
@@ -370,7 +411,9 @@ class RestaurantController extends AbstractController
      */
     public function addProductToCartAction($id, $code, Request $request,
         CartContextInterface $cartContext,
-        TranslatorInterface $translator)
+        TranslatorInterface $translator,
+        RestaurantResolver $restaurantResolver,
+        OptionsPayloadConverter $optionsPayloadConverter)
     {
         $restaurant = $this->getDoctrine()
             ->getRepository(LocalBusiness::class)->find($id);
@@ -399,32 +442,19 @@ class RestaurantController extends AbstractController
             return $this->jsonResponse($cart, $errors);
         }
 
+        // This may "upgrade" the order target,
+        // i.e switch from pointing to a single restaurant to pointing to a hub
+        $restaurantResolver->changeVendor($cart);
+
         $cartItem = $this->orderItemFactory->createNew();
 
         if (!$product->hasOptions()) {
             $productVariant = $this->productVariantResolver->getVariant($product);
         } else {
-
             if (!$request->request->has('options') && !$product->hasNonAdditionalOptions()) {
                 $productVariant = $this->productVariantResolver->getVariant($product);
             } else {
-
-                $optionValues = new \SplObjectStorage();
-                foreach ($request->request->get('options') as $option) {
-                    if (isset($option['code'])) {
-                        $optionValue = $this->productOptionValueRepository->findOneByCode($option['code']);
-                        if ($optionValue && $product->hasOptionValue($optionValue)) {
-                            $quantity = isset($option['quantity']) ? (int) $option['quantity'] : 0;
-                            if (!$optionValue->getOption()->isAdditional() || null === $optionValue->getOption()->getValuesRange()) {
-                                $quantity = 1;
-                            }
-                            if ($quantity > 0) {
-                                $optionValues->attach($optionValue, $quantity);
-                            }
-                        }
-                    }
-                }
-
+                $optionValues = $optionsPayloadConverter->convert($product, $request->request->get('options'));
                 $productVariant = $this->productVariantResolver->getVariantForOptionValues($product, $optionValues);
             }
         }

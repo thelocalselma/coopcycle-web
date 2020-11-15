@@ -134,7 +134,6 @@ services:
       $orderItemRepository: '@sylius.repository.order_item'
       $orderItemFactory: '@sylius.factory.order_item'
       $productVariantResolver: '@coopcycle.sylius.product_variant_resolver.lazy'
-      $productOptionValueRepository: '@sylius.repository.product_option_value'
       $orderItemQuantityModifier: '@sylius.order_item_quantity_modifier'
       $orderModifier: '@sylius.order_modifier'
       $serializer: '@serializer'
@@ -279,6 +278,16 @@ services:
         label: 'Fixed discount'
         form_type: AppBundle\Form\Sylius\Promotion\Action\FixedDiscountConfigurationType
 
+  sylius.promotion_action.percentage_discount:
+    class: AppBundle\Sylius\Promotion\Action\PercentageDiscountPromotionActionCommand
+    arguments:
+      - "@sylius.factory.adjustment"
+    tags:
+      - name: sylius.promotion_action
+        type: order_percentage_discount
+        label: 'Percentage discount'
+        form_type: AppBundle\Form\Sylius\Promotion\Action\AppBundle\Form\Sylius\Promotion\Action\PercentageDiscountConfigurationType
+
   sylius.promotion.eligibility_checker.promotion_coupon_per_customer_usage_limit:
     class: AppBundle\Sylius\Promotion\Checker\Eligibility\PromotionCouponPerCustomerUsageLimitEligibilityChecker
     arguments:
@@ -421,6 +430,10 @@ services:
     tags:
       - { name: doctrine.orm.entity_listener }
 
+  AppBundle\Entity\Listener\OrderListener:
+    tags:
+      - { name: doctrine.orm.entity_listener }
+
   AppBundle\EventListener\JwtListener:
     tags:
       - { name: kernel.event_listener, event: lexik_jwt_authentication.on_authentication_success, method: onAuthenticationSuccess }
@@ -439,6 +452,11 @@ services:
       - method: setRestaurantFilter
         arguments:
             - '@coopcycle.utils.restaurant_filter'
+
+  AppBundle\Entity\HubRepository:
+    factory: ['@doctrine.orm.default_entity_manager', getRepository]
+    arguments:
+      - AppBundle\Entity\Hub
 
   AppBundle\Service\Routing\Osrm:
     arguments:
@@ -724,7 +742,6 @@ services:
 
   AppBundle\Api\DataTransformer\CartItemInputDataTransformer:
     arguments:
-      $productOptionValueRepository: "@sylius.repository.product_option_value"
       $orderItemFactory: "@sylius.factory.order_item"
       $variantResolver: "@coopcycle.sylius.product_variant_resolver.lazy"
 
@@ -861,6 +878,7 @@ services:
   AppBundle\EventSubscriber\RegistrationInitializeListener:
     arguments:
       $orderRepository: '@sylius.repository.order'
+      $customerRepository: '@sylius.repository.customer'
       $secret: '%secret%'
 
   AppBundle\Embed\Context: ~
@@ -889,3 +907,7 @@ services:
     tags:
       - { name: kernel.event_subscriber }
       - { name: monolog.logger, channel: checkout }
+
+  AppBundle\Utils\OptionsPayloadConverter:
+    arguments:
+      $productOptionValueRepository: '@sylius.repository.product_option_value'

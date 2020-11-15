@@ -92,19 +92,43 @@ const generic = {
         (this.props.address.streetAddress || '') : (_.isString(this.props.address) ? this.props.address : ''),
       suggestions: [],
       multiSection: false,
+      sessionToken: null,
     }
   },
   onSuggestionsFetchRequested: function({ value }) {
+
+    // https://developers.google.com/places/web-service/session-tokens
+    // https://developers.google.com/maps/documentation/javascript/places-autocomplete#session_tokens
+    // Place Autocomplete uses session tokens to group the query and selection phases of a user autocomplete search
+    // into a discrete session for billing purposes.
+    // The session begins when the user starts typing a query,
+    // and concludes when they select a place and a call to Place Details is made.
+    // Each session can have multiple autocomplete queries, followed by one place selection.
+    let sessionToken = ''
+    if (!this.state.sessionToken) {
+      sessionToken = new google.maps.places.AutocompleteSessionToken()
+      this.setState({ sessionToken })
+    } else {
+      sessionToken = this.state.sessionToken
+    }
+
     // @see https://developers.google.com/maps/documentation/javascript/places-autocomplete#place_autocomplete_service
     // @see https://developers.google.com/maps/documentation/javascript/reference/#AutocompleteService
     this.autocompleteService.getPlacePredictions({
       ...autocompleteOptions,
       input: value,
+      sessionToken,
     }, this._autocompleteCallback.bind(this))
   },
   onSuggestionSelected: function (event, { suggestion }) {
 
     if (suggestion.type === 'prediction') {
+
+      // https://developers.google.com/places/web-service/session-tokens
+      // The session begins when the user starts typing a query,
+      // and concludes when they select a place and a call to Place Details is made.
+      this.setState({ sessionToken: null })
+
       const { placeId } = suggestion
 
       this.geocoder.geocode({ placeId }, (results, status) => {

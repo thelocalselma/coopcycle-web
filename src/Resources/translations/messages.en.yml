@@ -114,7 +114,7 @@ restaurants.placeholder.text: New restaurants are coming soon!
 localBusiness.form.orderingDelayMinutes: Additional delay before ordering
 localBusiness.form.orderingDelayMinutes.help: Use this field to add some time before
   the customer can order. This setting doesn't change the time needed for cooking
-  (20 minutes) and cycling (25 minutes).
+  and cycling.
 localBusiness.form.enabled: Enabled
 localBusiness.form.orderingDelayDays: Day(s)
 localBusiness.form.orderingDelayHours: Hour(s)
@@ -325,7 +325,7 @@ order.state.cart: Cart
 order.state.accepted: Accepted
 order.state.refused: Refused
 order.state.new: New
-order.state.fulfilled: Delivered
+order.state.fulfilled: Fulfilled
 order.state.cancelled: Cancelled
 order.reusable_packaging.alert: This order must be packed in reusable packaging
 order.public_link: Shareable link
@@ -704,7 +704,10 @@ form.api_app.store.label: Store
 form.api_app.client_id.label: Identifier
 form.api_app.client_secret.label: Secret key
 form.credit_note.user_search.help: The promotion will only be usable by this user
+form.credit_note.user_search.label: User
+form.credit_note.type.label: Discount type
 form.credit_note.amount.label: Amount
+form.credit_note.percentage.label: Percentage
 form.credit_note.name.label: Name
 form.credit_note.name.help: The name of the promotion that will be displayed in the
   cart
@@ -946,6 +949,7 @@ basics.view_example: View example
 notifications.restaurant.new_order: New order to accept
 profile.loopeat.connect: Connect my LoopEat account
 profile.loopeat.connected: LoopEat account connected
+profile.loopeat.disconnect: Disconnect LoopEat
 basics.free: free
 task.receipt.greeting: Dear customer,
 task.receipt.message: Hereby we confirm that we have delivered your parcel at <strong>%address%</strong>
@@ -1118,3 +1122,6 @@ homepage.form.title: Do you need something delivered?
 homepage.form.content: "<strong>%brand_name%</strong> is operating local and non polluting\
   \ on-demand bike delivery services. Ship a single package, or fulfill recuring shipping\
   \ for your business."
+promotion_action.percentage_discount: '%percentage% discount'
+promotion_action.delivery_percentage_discount: '%percentage% discount on delivery fees'
+promotion_action.fixed_discount: '%amount% discount'

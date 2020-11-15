@@ -48,3 +48,5 @@
 .env
 .env.production
 .env.local
+
+/js/app/shared-js-lib-local

@@ -192,6 +192,10 @@ class ProfileController extends Controller
         $editForm->handleRequest($request);
 
         if ($editForm->isSubmitted() && $editForm->isValid()) {
+            if ($editForm->getClickedButton() && 'loopeatDisconnect' === $editForm->getClickedButton()->getName()) {
+                $user->clearLoopEatCredentials();
+            }
+
             $userManager->updateUser($user);
 
             return $this->redirectToRoute('fos_user_profile_show');
@@ -463,7 +467,9 @@ class ProfileController extends Controller
             $request->getSession()->set('_jwt', $jwtManager->create($user));
         }
 
-        return new JsonResponse($request->getSession()->get('_jwt'));
+        return new JsonResponse([
+            'jwt' => $request->getSession()->get('_jwt'),
+        ]);
     }
 
     /**

@@ -22,7 +22,7 @@ parameters:
     database_user:     "%env(COOPCYCLE_DB_USER)%"
     database_password: "%env(COOPCYCLE_DB_PASSWORD)%"
     locale: "%coopcycle.locale%"
-    locale_regex: ca|fr|en|es|de|it|pl|pt-BR
+    locale_regex: an|ca|fr|en|es|de|it|pl|pt-BR
     router.request_context.host: "%env(APP_HOST)%"
     loopeat_enabled: '%env(bool:LOOPEAT_ENABLED)%'
     loopeat_base_url: '%env(LOOPEAT_BASE_URL)%'
@@ -594,6 +594,7 @@ fos_js_routing:
         - admin_task_list_create
         - admin_task_list_modify
         - admin_task_receipt
+        - admin_users_search
         - profile_jwt
         - profile_notifications
         - profile_notifications_mark_as_read

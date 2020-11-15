@@ -80,7 +80,7 @@ restaurants.placeholder.text: ¡Nuevos restaurantes llegarán pronto!
 localBusiness.form.orderingDelayMinutes: Tiempo adicional antes del pedido
 localBusiness.form.orderingDelayMinutes.help: Usa éstos campos para añadir un tiempo
   adicional antes del pedido de un usuario. Esta opción no cambia los tiempos de preparación
-  de la comida (20 minutos) y ni de entrega (25 minutos).
+  de la comida y ni de entrega.
 localBusiness.form.orderingDelayDays: Día(s)
 localBusiness.form.orderingDelayHours: Hora(s)
 localBusiness.form.name: Nombre
@@ -222,7 +222,7 @@ order.state.new: Nuevo
 order.state.refused: Rechazado
 order.state.accepted: Aceptado
 order.state.cancelled: Cancelado
-order.state.fulfilled: Entregado
+order.state.fulfilled: Cumplido
 payment.state.cart: Cesta
 payment.state.new: Nuevo
 payment.state.authorized: Autorizado
