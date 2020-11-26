@@ -2,7 +2,7 @@ FROM osrm/osrm-backend:v5.16.0
 
 # Locations for the OSM data to be loaded into the container
 ARG OSM_DATA_URL=https://coopcycle-osrm.s3.amazonaws.com/selma-alabama-us.osm.pbf
-ARG OSM_PROFILE=bicycle
+ARG OSM_PROFILE=car
 
 # Fix "can't execute 'ssl_helper'"
 # https://github.com/Yelp/dumb-init/issues/73
